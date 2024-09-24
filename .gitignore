@@ -1,0 +1,17 @@
+# Virtual Environment
+billionaire_env/
+
+# Jupyter Notebook
+scratch.ipynb
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# macOS system files
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
