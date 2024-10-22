@@ -10,3 +10,9 @@ dash==2.14.1
 
 # Additional Dash components
 dash-bootstrap-components==1.5.0
+
+# Country codes
+pycountry==23.12.11
+
+# World Bank API
+wbdata==1.0.0
