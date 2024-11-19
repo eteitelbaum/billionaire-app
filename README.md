@@ -13,7 +13,7 @@ cd billionaire-app
 
 ```bash
 python -m venv billionaire_env
-venv\Scripts\activate
+billionaire_env\Scripts\activate
 ```
 
 3. Install the dependencies
