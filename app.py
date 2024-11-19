@@ -4,6 +4,7 @@ from dash import dcc, html, callback
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import pandas as pd
+import plotly.express as px
 
 # Load the data
 df = pd.read_csv('data/billionaires_with_country_data.csv')
@@ -50,9 +51,11 @@ app.layout = dbc.Container([
             ], className="mb-4"),
             
             dbc.Row([  # Bottom row
-                dbc.Col(dbc.Card(dbc.CardBody("Bottom Card Placeholder"), 
+                dbc.Col(dbc.Card(dbc.CardBody([
+                    dcc.Graph(id='industrytreemap')
+                ]),
                     style={'height': '400px'}), width=12)
-            ], className="mb-4"),
+            ]),
 
             # New row for slider and controls
             dbc.Row([
@@ -159,6 +162,35 @@ def control_animation(n_clicks, n_intervals, current_year):
         return next_year, False
     else:
         return current_year, True
+
+@app.callback(
+    Output('industrytreemap', 'figure'),
+    #Input('country-dropdown', 'value'),
+    Input('year-slider', 'value')
+)
+def update_graph(#selected,
+                 year):
+    #filtered_df = df[df['country_of_citizenship'].isin(selected)] # filter selected country
+    #filtered_df = filtered_df[filtered_df['year'] == year].query('industry == industry') # filter selected year
+    filtered_df = df[df['year'].dt.year == year].dropna(subset=['industry'])
+    fig = px.treemap(
+        filtered_df,
+        path=[px.Constant("all"),
+              #"country_of_citizenship",
+              "industry", "full_name"], # variables outside -> inside
+        values="net_worth", # count based on net worth
+        color = 'industry', # color based on industry
+        maxdepth = 3)
+
+    fig.update_layout(
+        height=400,  # Might need to adjust if using autosize
+        #autosize=True,  # Makes the plot responsive
+        margin=dict(l=0, r=0, t=0, b=30),  # Minimal margins
+        #paper_bgcolor='rgba(0,0,0,0)',  # Optional: transparent background
+        #plot_bgcolor='rgba(0,0,0,0)',  # Optional: transparent plot area
+    )
+
+    return fig
 
 # Run the app
 if __name__ == "__main__":
