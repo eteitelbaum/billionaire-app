@@ -1,13 +1,16 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, callback
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output,State
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
 
 # Load the data
 df = pd.read_csv('data/billionaires_with_country_data.csv')
+bill_df = pd.read_csv('data/billionaire_count_and_wealth_data.csv')
+scatter_data = pd.read_csv('data/scatter_geo_data_complete.csv')
+
 
 # Preprocess the data
 df['year'] = pd.to_datetime(df['year'], format='%Y')
@@ -44,10 +47,22 @@ app.layout = dbc.Container([
                             'showTips': False
                         }
                     ),
-                ]), style={'height': '400px'}), width=6),
+                ]), style={'height': '450px'}), width=6),
                 
-                dbc.Col(dbc.Card(dbc.CardBody("Visualization 2 Placeholder"), 
-                    style={'height': '400px'}), width=6),
+                dbc.Col(dbc.Card(dbc.CardBody([
+                    #html.H1("Billionaire Count and Wealth as % of GDP"),
+                    #html.P("Choose visualization type:"), 
+                    dbc.Tabs(
+                    [
+                        dbc.Tab(label="Billionaire Count", tab_id="billionaire_count"),
+                        dbc.Tab(label="Wealth as % of GDP", tab_id="percent_of_gdp"),
+                    ],
+                    id="tabs",
+                    active_tab="billionaire_count",
+                ),
+                dcc.Graph(id="choro-map"),
+                    ]), 
+                    style={'height': '450px'}), width=6),
             ], className="mb-4"),
             
             dbc.Row([  # Bottom row
@@ -80,17 +95,53 @@ app.layout = dbc.Container([
 
 # Add these functions after the layout but before app.run_server:
 
+
 def get_flag_emoji(iso3):
     if pd.isna(iso3) or len(iso3) != 3:
         return ''
     iso2 = iso3[:2]
     return ''.join(chr(ord(c) + 127397) for c in iso2)
 
-@callback(
-    Output("wealth-chart", "figure"),
-    Input("year-slider", "value")
+
+@app.callback(
+    [
+        Output("year-slider", "value"),
+        Output("wealth-chart", "figure"),
+        Output("choro-map", "figure"),
+        Output("animation-interval", "disabled"),
+        Output("play-button", "children"),
+    ],
+    [
+        Input("play-button", "n_clicks"),
+        Input("animation-interval", "n_intervals"),
+        Input("year-slider", "value"),
+        Input("tabs", "active_tab"),
+    ],
+    [
+        State("year-slider", "max"),
+        State("animation-interval", "disabled"),
+    ],
 )
-def update_chart(selected_year):
+
+def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_year, is_paused):
+    triggered_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    
+    # Handle play button logic
+    if triggered_id == "play-button":
+        if is_paused:
+            return selected_year, dash.no_update, dash.no_update, False, "Pause"
+        else:
+            return selected_year, dash.no_update, dash.no_update, True, "Play"
+
+
+    # Handle interval animation logic
+    if triggered_id == "animation-interval":
+        if not is_paused:
+            next_year = min(selected_year + 1, max_year)
+            if next_year == max_year:
+                return next_year, dash.no_update, dash.no_update, True, "Play"
+            selected_year = next_year
+            
     # Filter data for the selected year
     year_df = df[df['year'].dt.year == selected_year]
     
@@ -100,8 +151,8 @@ def update_chart(selected_year):
     # Add flag emojis to names
     top_30['name_with_flag'] = top_30.apply(lambda row: f"{row['full_name']} {get_flag_emoji(row['iso3c'])} ", axis=1)
     
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
+    wealth_chart = go.Figure()
+    wealth_chart.add_trace(go.Bar(
         y=top_30['name_with_flag'],
         x=top_30['net_worth'],
         orientation='h',
@@ -113,7 +164,7 @@ def update_chart(selected_year):
         )
     ))
     
-    fig.update_layout(
+    wealth_chart.update_layout(
         xaxis_title="Net Worth (USD)",
         #yaxis_title="Billionaire",
         yaxis=dict(
@@ -140,28 +191,76 @@ def update_chart(selected_year):
         axis=1
     )
     
-    return fig
-
-@callback(
-    Output("year-slider", "value"),
-    Output("animation-interval", "disabled"),
-    Input("play-button", "n_clicks"),
-    Input("animation-interval", "n_intervals"),
-    Input("year-slider", "value"),
-    prevent_initial_call=True
-)
-def control_animation(n_clicks, n_intervals, current_year):
-    triggered_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+    min_val = bill_df[active_tab].min()
+    max_val = bill_df[active_tab].max()
     
-    if triggered_id == "play-button":
-        return current_year, False
-    elif triggered_id == "animation-interval":
-        next_year = min(current_year + 1, df['year'].dt.year.max())
-        if next_year == df['year'].dt.year.max():
-            return next_year, True
-        return next_year, False
+    choropleth_data = bill_df[bill_df["year"] == selected_year]
+    scatter_data_filtered = scatter_data[scatter_data["year"] == selected_year]
+    
+    if active_tab == "billionaire_count":
+        tab = "Billionaire Count"
     else:
-        return current_year, True
+        tab = "Wealth as a Percent of GDP"
+        max_val = bill_df['percent_of_gdp'].quantile(0.90)
+        
+    choro_map = go.Figure()
+    choro_map.add_trace(
+        go.Choropleth(
+            locations = choropleth_data["iso3c"],
+            z = choropleth_data[active_tab],
+            text=(
+                choropleth_data["country_of_citizenship"]
+                + f"<br>{tab}: "
+                + choropleth_data[active_tab].astype(str)),
+            colorscale = "agsunset_r",
+            zmin = min_val,
+            zmax = max_val,
+            colorbar_title = tab,
+            hoverinfo = "text"
+            ))
+    
+    choro_map.add_trace(
+        go.Scattergeo(
+            lat=scatter_data_filtered["lattitude"],
+            lon=scatter_data_filtered["longitude"],
+            text=(
+                scatter_data_filtered["country_of_citizenship"]
+                + f"<br>{tab}: "
+                + scatter_data_filtered[active_tab].astype(str)
+            ),
+            mode="markers",
+            marker=dict(
+                size=10,
+                color = scatter_data_filtered[active_tab],
+                cmin = min_val,
+                cmax = max_val,
+                colorscale = "agsunset_r",
+                line = dict(
+                    color = "black",
+                    width = 2
+                )), 
+            hovertemplate="Country: %{text}<extra></extra>"))
+    
+    choro_map.update_geos(
+        projection_type="orthographic",
+        showcoastlines=True,
+        coastlinecolor="Black",
+        showland=True,
+        landcolor="White",
+        showcountries=True,
+        showocean=True, 
+        oceancolor="LightBlue",
+        showlakes=True, 
+        lakecolor="Blue",
+    )
+    
+    choro_map.update_layout(
+        title=f"Billionaires: {tab} ({selected_year})",
+        margin=dict(l=0, r=0, t=40, b=0),
+        coloraxis_colorbar=dict(title=tab),
+    )
+
+    return selected_year, wealth_chart, choro_map, is_paused, "Pause" if not is_paused else "Play"
 
 @app.callback(
     Output('industrytreemap', 'figure'),
