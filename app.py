@@ -1,43 +1,47 @@
+# Standard library imports
 import dash
-import dash_bootstrap_components as dbc
 from dash import dcc, html, callback
-from dash.dependencies import Input, Output,State
+from dash.dependencies import Input, Output, State
+
+# Third-party imports
+import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import pandas as pd
 import plotly.express as px
 
-# Load the data
+# ------------------------
+# Data Loading & Preprocessing
+# ------------------------
+
 df = pd.read_csv('data/billionaires_with_country_data.csv')
+df['year'] = pd.to_datetime(df['year'], format='%Y')
+df['net_worth'] = pd.to_numeric(df['net_worth'], errors='coerce')
 bill_df = pd.read_csv('data/billionaire_count_and_wealth_data.csv')
 scatter_data = pd.read_csv('data/scatter_geo_data_complete.csv')
 
+# ------------------------
+# Helper Functions
+# ------------------------
+def get_flag_emoji(iso3):
+    """Convert ISO3 country code to flag emoji."""
+    if pd.isna(iso3) or len(iso3) != 3:
+        return ''
+    iso2 = iso3[:2]
+    return ''.join(chr(ord(c) + 127397) for c in iso2)
 
-# Preprocess the data
-df['year'] = pd.to_datetime(df['year'], format='%Y')
-df['net_worth'] = pd.to_numeric(df['net_worth'], errors='coerce')
-
-# Initialize the Dash app
+# ------------------------
+# App Initialization
+# ------------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# Define the layout without data/visualizations
+# ------------------------
+# Layout
+# ------------------------
 app.layout = dbc.Container([
-    dbc.Row([  # Main content area
-        dbc.Col([  
-            dbc.Row([  # KPI cards row
-                dbc.Col(dbc.Card(dbc.CardBody([
-                    html.H4("KPI 1", className="card-title"),
-                    html.H2("Placeholder Value", className="card-text")
-                ]), color="primary", inverse=True, style={'height': '100px'}), width=4),
-                dbc.Col(dbc.Card(dbc.CardBody([
-                    html.H4("KPI 2", className="card-title"),
-                    html.H2("Placeholder Value", className="card-text")
-                ]), color="success", inverse=True, style={'height': '100px'}), width=4),
-                dbc.Col(dbc.Card(dbc.CardBody([
-                    html.H4("KPI 3", className="card-title"),
-                    html.H2("Placeholder Value", className="card-text")
-                ]), color="danger", inverse=True, style={'height': '100px'}), width=4)
-            ], className="mb-4"),
-            
+    # Add title row
+    dbc.Row([
+        dbc.Col(html.H2("Billionaire App", className="text-center mb-2"), width=12)
+    ]),     
             dbc.Row([  # Visualization row
                 dbc.Col(dbc.Card(dbc.CardBody([  
                     dcc.Graph(
@@ -72,7 +76,7 @@ app.layout = dbc.Container([
                     style={'height': '400px'}), width=12)
             ]),
 
-            # New row for slider and controls
+            # Controls row
             dbc.Row([
                 dbc.Col([
                     dcc.Slider(
@@ -84,17 +88,17 @@ app.layout = dbc.Container([
                         step=None
                     ),
                     html.Div([
-                        dbc.Button("Play", id="play-button", className="mt-3"),
+                        dbc.Button("Play", id="play-button", className="mt-2"),
                         dcc.Interval(id="animation-interval", interval=1000, n_intervals=0, disabled=True)
                     ], style={'textAlign': 'center'})
                 ], width=12)
             ])
         ], width=12)
     ])
+
 ], fluid=True, style={'height': '100vh'})
 
 # Add these functions after the layout but before app.run_server:
-
 
 def get_flag_emoji(iso3):
     if pd.isna(iso3) or len(iso3) != 3:
@@ -147,7 +151,7 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
     
     # Get top 30 billionaires for this year
     top_30 = year_df.nlargest(30, 'net_worth')
-    
+
     # Add flag emojis to names
     top_30['name_with_flag'] = top_30.apply(lambda row: f"{row['full_name']} {get_flag_emoji(row['iso3c'])} ", axis=1)
     
@@ -157,38 +161,32 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
         x=top_30['net_worth'],
         orientation='h',
         hovertemplate='$%{x:.2f}B<extra></extra>',
-        hoverlabel=dict(
-            bgcolor='white',
-            font_size=14,
-            align='left'
-        )
+        hoverlabel=dict(bgcolor='white', font_size=14, align='left')
     ))
-    
+
     wealth_chart.update_layout(
         xaxis_title="Net Worth (USD)",
-        #yaxis_title="Billionaire",
         yaxis=dict(
             categoryorder='total ascending',
-            tickfont=dict(size=10),
+            tickfont=dict(size=9),
             constrain='domain',
-            nticks=len(top_30),
             showticklabels=True,
         ),
-        bargap=0.1,  # Gap between bars (0 to 1)
-        height=400,  # Might need to adjust if using autosize
-        autosize=True,  # Makes the plot responsive
-        margin=dict(l=0, r=0, t=0, b=20),  # Minimal margins
+        bargap=0.2,
+        height=400,
+        autosize=True,
+        margin=dict(l=200, r=20, t=10, b=30),
         showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',  # Optional: transparent background
-        plot_bgcolor='rgba(0,0,0,0)',    # Optional: transparent plot area
-        hoverdistance=100,  # Increases hover sensitivity
-        hovermode='y'  # Makes hover work better for horizontal bars
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hoverdistance=100,
+        hovermode='y'
     )
     
-    # Option 3: Break long names into multiple lines
-    top_30['name_with_flag'] = top_30.apply(
-        lambda row: f"{get_flag_emoji(row['iso3c'])} {row['full_name'][:20]}<br>{row['full_name'][20:]}", 
-        axis=1
+    # Additional layout adjustments
+    fig.update_yaxes(
+        ticksuffix=' ',
+        automargin=True
     )
     
     min_val = bill_df[active_tab].min()
@@ -291,6 +289,8 @@ def update_graph(#selected,
 
     return fig
 
-# Run the app
+# ------------------------
+# Main
+# ------------------------
 if __name__ == "__main__":
     app.run_server(debug=True)
