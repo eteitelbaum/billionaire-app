@@ -15,9 +15,12 @@ import plotly.express as px
 
 df = pd.read_csv('data/billionaires_with_country_data.csv')
 df['year'] = pd.to_datetime(df['year'], format='%Y')
+df = df[df['year'].dt.year >= 2000]
 df['net_worth'] = pd.to_numeric(df['net_worth'], errors='coerce')
 bill_df = pd.read_csv('data/billionaire_count_and_wealth_data.csv')
+bill_df = bill_df[bill_df['year'] >= 2000]
 scatter_data = pd.read_csv('data/scatter_geo_data_complete.csv')
+scatter_data = scatter_data[scatter_data['year'] >= 2000]
 
 # ------------------------
 # Helper Functions
@@ -51,7 +54,7 @@ app.layout = dbc.Container([
                             'showTips': False
                         }
                     ),
-                ]), style={'height': '450px'}), width=6),
+                ]), style={'height': '400px'}), width=6),
                 
                 dbc.Col(dbc.Card(dbc.CardBody([
                     #html.H1("Billionaire Count and Wealth as % of GDP"),
@@ -64,9 +67,12 @@ app.layout = dbc.Container([
                     id="tabs",
                     active_tab="billionaire_count",
                 ),
-                dcc.Graph(id="choro-map"),
+                dcc.Graph(id="choro-map",
+                    config={
+                        'displayModeBar': False  
+                        },),
                     ]), 
-                    style={'height': '450px'}), width=6),
+                    style={'height': '400px'}), width=6),
             ], className="mb-4"),
             
             dbc.Row([  # Bottom row
@@ -93,10 +99,7 @@ app.layout = dbc.Container([
                     ], style={'textAlign': 'center'})
                 ], width=12)
             ])
-        ], width=12)
-    ])
-
-], fluid=True, style={'height': '100vh'})
+        ], fluid=True)
 
 # Add these functions after the layout but before app.run_server:
 
@@ -150,15 +153,15 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
     year_df = df[df['year'].dt.year == selected_year]
     
     # Get top 30 billionaires for this year
-    top_30 = year_df.nlargest(30, 'net_worth')
+    top_20 = year_df.nlargest(20, 'net_worth')
 
     # Add flag emojis to names
-    top_30['name_with_flag'] = top_30.apply(lambda row: f"{row['full_name']} {get_flag_emoji(row['iso3c'])} ", axis=1)
+    top_20['name_with_flag'] = top_20.apply(lambda row: f"{row['full_name']} {get_flag_emoji(row['iso3c'])} ", axis=1)
     
     wealth_chart = go.Figure()
     wealth_chart.add_trace(go.Bar(
-        y=top_30['name_with_flag'],
-        x=top_30['net_worth'],
+        y=top_20['name_with_flag'],
+        x=top_20['net_worth'],
         orientation='h',
         hovertemplate='$%{x:.2f}B<extra></extra>',
         hoverlabel=dict(bgcolor='white', font_size=14, align='left')
@@ -184,7 +187,7 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
     )
     
     # Additional layout adjustments
-    fig.update_yaxes(
+    wealth_chart.update_yaxes(
         ticksuffix=' ',
         automargin=True
     )
@@ -253,7 +256,6 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
     )
     
     choro_map.update_layout(
-        title=f"Billionaires: {tab} ({selected_year})",
         margin=dict(l=0, r=0, t=40, b=0),
         coloraxis_colorbar=dict(title=tab),
     )
