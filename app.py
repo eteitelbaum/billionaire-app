@@ -56,23 +56,32 @@ app.layout = dbc.Container([
                     ),
                 ]), style={'height': '400px'}), width=6),
                 
-                dbc.Col(dbc.Card(dbc.CardBody([
-                    #html.H1("Billionaire Count and Wealth as % of GDP"),
-                    #html.P("Choose visualization type:"), 
-                    dbc.Tabs(
-                    [
-                        dbc.Tab(label="Billionaire Count", tab_id="billionaire_count"),
-                        dbc.Tab(label="Wealth as % of GDP", tab_id="percent_of_gdp"),
-                    ],
-                    id="tabs",
-                    active_tab="billionaire_count",
-                ),
-                dcc.Graph(id="choro-map",
-                    config={
-                        'displayModeBar': False  
-                        },),
-                    ]), 
-                    style={'height': '400px'}), width=6),
+                dbc.Col(dbc.Card([  # Removed CardBody to have more control
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.RadioItems(
+                                options=[
+                                    {"label": "Billionaire Count", "value": "billionaire_count"},
+                                    {"label": "Wealth as % of GDP", "value": "percent_of_gdp"},
+                                ],
+                                value="billionaire_count",
+                                inline=True,
+                                id="switch-options",
+                                className="pt-2 pe-2",  # padding top and padding end
+                                style={"float": "right"},
+                            ),
+                        ], width=12, className="text-end"),
+                    ], className="g-0"),  # g-0 removes gutters
+                    dbc.Row([
+                        dbc.Col([
+                            dcc.Graph(
+                                id="choro-map",
+                                config={'displayModeBar': False},
+                                style={"height": "350px"},  # Adjust this value as needed
+                            ),
+                        ], width=12),
+                    ], className="g-0"),
+                ], style={'height': '400px'}), width=6),
             ], className="mb-4"),
             
             dbc.Row([  # Bottom row
@@ -122,7 +131,7 @@ def get_flag_emoji(iso3):
         Input("play-button", "n_clicks"),
         Input("animation-interval", "n_intervals"),
         Input("year-slider", "value"),
-        Input("tabs", "active_tab"),
+        Input("switch-options", "value"),
     ],
     [
         State("year-slider", "max"),
@@ -130,7 +139,7 @@ def get_flag_emoji(iso3):
     ],
 )
 
-def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_year, is_paused):
+def update_visualizations(n_clicks,n_intervals,selected_year, value, max_year, is_paused):
     triggered_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
     
     # Handle play button logic
@@ -192,13 +201,13 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
         automargin=True
     )
     
-    min_val = bill_df[active_tab].min()
-    max_val = bill_df[active_tab].max()
+    min_val = bill_df[value].min()
+    max_val = bill_df[value].max()
     
     choropleth_data = bill_df[bill_df["year"] == selected_year]
     scatter_data_filtered = scatter_data[scatter_data["year"] == selected_year]
     
-    if active_tab == "billionaire_count":
+    if value == "billionaire_count":
         tab = "Billionaire Count"
     else:
         tab = "Wealth as a Percent of GDP"
@@ -208,15 +217,24 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
     choro_map.add_trace(
         go.Choropleth(
             locations = choropleth_data["iso3c"],
-            z = choropleth_data[active_tab],
+            z = choropleth_data[value],
             text=(
                 choropleth_data["country_of_citizenship"]
                 + f"<br>{tab}: "
-                + choropleth_data[active_tab].astype(str)),
+                + choropleth_data[value].astype(str)),
             colorscale = "agsunset_r",
             zmin = min_val,
             zmax = max_val,
-            colorbar_title = tab,
+            colorbar=dict(
+                title=tab,
+                thickness=15,  # Make the colorbar thinner
+                len=0.6,      # Make the colorbar 60% of its original length
+                x= .9,         # Position legend
+                y=0.5,       # Center it vertically
+                yanchor='middle',
+                titleside='right',
+                ticks='outside'
+            ),
             hoverinfo = "text"
             ))
     
@@ -227,15 +245,16 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
             text=(
                 scatter_data_filtered["country_of_citizenship"]
                 + f"<br>{tab}: "
-                + scatter_data_filtered[active_tab].astype(str)
+                + scatter_data_filtered[value].astype(str)
             ),
             mode="markers",
             marker=dict(
                 size=10,
-                color = scatter_data_filtered[active_tab],
+                color = scatter_data_filtered[value],
                 cmin = min_val,
                 cmax = max_val,
                 colorscale = "agsunset_r",
+                colorbar=None,
                 line = dict(
                     color = "black",
                     width = 2
@@ -252,12 +271,16 @@ def update_visualizations(n_clicks,n_intervals,selected_year, active_tab, max_ye
         showocean=True, 
         oceancolor="LightBlue",
         showlakes=True, 
-        lakecolor="Blue",
+        lakecolor="LightBlue",
+        projection_rotation_lon=-98.5795,
+        projection_rotation_lat=37.0902,
+        #projection_scale=1
     )
     
     choro_map.update_layout(
-        margin=dict(l=0, r=0, t=40, b=0),
+        margin=dict(l=0, r=90, t=0, b=0),
         coloraxis_colorbar=dict(title=tab),
+        #height=400
     )
 
     return selected_year, wealth_chart, choro_map, is_paused, "Pause" if not is_paused else "Play"
@@ -279,6 +302,7 @@ def update_graph(#selected,
               "industry", "full_name"], # variables outside -> inside
         values="net_worth", # count based on net worth
         color = 'industry', # color based on industry
+        color_continuous_scale="turbo",
         maxdepth = 3)
 
     fig.update_layout(
