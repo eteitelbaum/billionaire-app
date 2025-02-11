@@ -3,13 +3,17 @@ Individual layout components for the Billionaires Dashboard.
 """
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+from modules.config import (
+    PLAY_BUTTON_STYLE, SLIDER_STYLE,
+    CONTROLS_MARGIN_TOP
+)
 
 def create_title_row():
     """Create the title row."""
     return dbc.Row([
         dbc.Col(html.H2(
             "The Oligarchy Atlas", 
-            className="text-center mb-2"), 
+            className="text-left mb-2"), 
             width=12, 
             style={"color": "#D43F96"})
     ])
@@ -84,17 +88,30 @@ def create_controls_row(min_year, max_year):
     """Create the controls row with slider and play button."""
     return dbc.Row([
         dbc.Col([
-            dcc.Slider(
-                id="year-slider",
-                min=min_year,
-                max=max_year,
-                value=min_year,
-                marks={str(year): str(year) for year in range(min_year, max_year + 1)},
-                step=None
-            ),
-            html.Div([
-                dbc.Button("Play", id="play-button", className="mt-2"),
-                dcc.Interval(id="animation-interval", interval=1000, n_intervals=0, disabled=True)
-            ], style={'textAlign': 'center'})
+            dbc.Row([
+                dbc.Col([  # Play button first
+                    dbc.Button(
+                        "Play",
+                        id="play-button",
+                        style=PLAY_BUTTON_STYLE
+                    ),
+                ], width=2),  # Take up 1/12 of the row
+                dbc.Col([  # Then slider
+                    dcc.Slider(
+                        id="year-slider",
+                        min=min_year,
+                        max=max_year,
+                        value=min_year,
+                        marks={str(year): str(year) for year in range(min_year, max_year + 1)},
+                        step=None
+                    ),
+                ], width=10),  # Take up 11/12 of the row
+                dcc.Interval(
+                    id="animation-interval",
+                    interval=1000,
+                    n_intervals=0,
+                    disabled=True
+                )
+            ], align="center")  # Vertically center the items
         ], width=12)
-    ])
+    ], className=CONTROLS_MARGIN_TOP)

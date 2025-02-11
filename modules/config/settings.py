@@ -12,7 +12,7 @@ ANIMATION_INTERVAL = 1000  # milliseconds
 
 # Color settings
 CHOROPLETH_COLORSCALE = "agsunset_r"
-TREEMAP_COLORSCALE = "turbo"
+TREEMAP_COLORSCALE = "turbo" # not currently used 
 OCEAN_COLOR = "LightBlue"
 LAND_COLOR = "White"
 
@@ -30,3 +30,22 @@ HOVER_MONEY_FORMAT = '$%{x:.2f}B'  # Two decimal places for hover
 # Visual theme settings
 PLOT_BGCOLOR = 'rgba(0,0,0,0)'  # Transparent background
 PAPER_BGCOLOR = 'rgba(0,0,0,0)'  # Transparent paper/container background
+
+# Layout spacing settings
+CONTROLS_MARGIN_TOP = "mt-3"    # Bootstrap margin class for top spacing
+
+# Control theme settings
+SLIDER_STYLE = {
+    "accentColor": "#D43F96",
+    "--progress-color": "#D43F96" # not currently used 
+}
+
+PLAY_BUTTON_STYLE = {
+    "backgroundColor": "#D43F96",
+    "border": "none"
+}
+
+# Remove the complex flex layout and use simpler positioning
+CONTROLS_CONTAINER_STYLE = {
+    "marginTop": "20px"  # Add some space above controls
+}
