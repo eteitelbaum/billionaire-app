@@ -54,13 +54,18 @@ def create_visualization_row():
                 ], className="g-0"),
                 dbc.Row([
                     dbc.Col([
-                        dcc.Graph(
+                        html.Div(
+                            dcc.Graph(
                             id="choro-map",
                             config={'displayModeBar': False},
                             style={"height": "350px"},
                         ),
+                        id = "map-container",
+                        n_clicks=0),
                     ], width=12),
                 ], className="g-0"),
+                html.Div(id='selected-country',style={'display': 'none'}),
+                #html.Button('Reset', id='reset-button', n_clicks=0)
             ], style={'height': '400px'}),
             width=6
         ),

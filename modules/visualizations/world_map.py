@@ -3,6 +3,7 @@ World map visualization for the Billionaires Dashboard.
 """
 import plotly.graph_objects as go
 
+
 def create_world_map(selected_year, view_type, bill_df, scatter_data):
     """Create the world map visualization."""
     # Get min/max values for color scaling
@@ -97,9 +98,12 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
     fig.update_layout(
         margin=dict(l=0, r=90, t=0, b=0),
         coloraxis_colorbar=dict(title=tab),
+        uirevision="true",
+        clickmode="event"
     )
     
     return fig
+
 
 if __name__ == "__main__":
     print("This module is not meant to be run directly")
