@@ -12,7 +12,7 @@ def create_title_row():
     """Create the title row."""
     return dbc.Row([
         dbc.Col(html.H2(
-            "The Oligarchy Atlas", 
+            "The Plutonomy Profiler", 
             className="text-left mb-2"), 
             width=12, 
             style={"color": "#D43F96"})
@@ -93,30 +93,34 @@ def create_controls_row(min_year, max_year):
     """Create the controls row with slider and play button."""
     return dbc.Row([
         dbc.Col([
-            dbc.Row([
-                dbc.Col([  # Play button first
-                    dbc.Button(
-                        "Play",
-                        id="play-button",
-                        style=PLAY_BUTTON_STYLE
-                    ),
-                ], width=2),  # Take up 1/12 of the row
-                dbc.Col([  # Then slider
+            html.Div([
+                dbc.Button(
+                    "Play",
+                    id="play-button",
+                    style={**PLAY_BUTTON_STYLE, "marginRight": "5px"}
+                ),
+                html.Div([
                     dcc.Slider(
                         id="year-slider",
                         min=min_year,
                         max=max_year,
                         value=min_year,
                         marks={str(year): str(year) for year in range(min_year, max_year + 1)},
-                        step=None
-                    ),
-                ], width=10),  # Take up 11/12 of the row
+                        step=None,
+                        className="no-border"
+                    )
+                ], style={"flex": 1, "marginLeft": "0px"}),
                 dcc.Interval(
                     id="animation-interval",
                     interval=1000,
                     n_intervals=0,
                     disabled=True
                 )
-            ], align="center")  # Vertically center the items
+            ], style={
+                "display": "flex",
+                "alignItems": "center",
+                "gap": "0",
+                "width": "100%"
+            })
         ], width=12)
     ], className=CONTROLS_MARGIN_TOP)

@@ -37,12 +37,17 @@ CONTROLS_MARGIN_TOP = "mt-3"    # Bootstrap margin class for top spacing
 # Control theme settings
 SLIDER_STYLE = {
     "accentColor": "#D43F96",
-    "--progress-color": "#D43F96" # not currently used 
+    "--progress-color": "#D43F96",
+    "border": "none",
+    "padding": "0",
+    "margin": "0"
 }
 
 PLAY_BUTTON_STYLE = {
     "backgroundColor": "#D43F96",
-    "border": "none"
+    "border": "none",
+    "padding": "6px 12px",  # Adjust as needed
+    "marginRight": "-10px"  # Negative margin to pull slider closer
 }
 
 # Remove the complex flex layout and use simpler positioning
