@@ -59,7 +59,7 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
             text=(
                 scatter_data_filtered["country_of_citizenship"]
                 + f"<br>{tab}: "
-                + scatter_data_filtered[view_type].astype(str)
+                + scatter_data_filtered[view_type].map(lambda x: f"{x:.2f}".rstrip("0").rstrip("."))
             ),
             mode="markers",
             marker=dict(
