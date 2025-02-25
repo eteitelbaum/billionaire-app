@@ -5,11 +5,14 @@ import plotly.graph_objects as go
 from modules.data import get_flag_emoji
 from modules.config import PLOT_BGCOLOR, PAPER_BGCOLOR
 
-def create_wealth_chart(year_df):
+def create_wealth_chart(year_df,selected_country):
     """Create the top 20 billionaires bar chart."""
     # Get top 20 billionaires for the selected year
-    top_20 = year_df.nlargest(20, 'net_worth')
-    
+    if selected_country:
+        top_20 = year_df[year_df['country_of_citizenship'] == selected_country].nlargest(20, 'net_worth')
+    else:
+        top_20 = year_df.nlargest(20, 'net_worth')
+
     # Add flag emojis to names
     top_20['name_with_flag'] = top_20.apply(
         lambda row: f"{row['full_name']} {get_flag_emoji(row['iso3c'])} ", 
@@ -49,3 +52,12 @@ def create_wealth_chart(year_df):
     )
     
     return fig
+
+"""  if clickData:
+        selected_country = clickData['points'][0].get('text')
+        country = selected_country.split('<br>')[0]
+        top_20 = year_df[year_df['country_of_citizenship'] == country].nlargest(20, 'net_worth')
+        if "Billionaire Count: nan" in selected_country or "Wealth as a Percent of GDP: nan" in selected_country:
+            top_20 = year_df.nlargest(20, 'net_worth')
+    else:
+        top_20 = year_df.nlargest(20, 'net_worth') """

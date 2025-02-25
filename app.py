@@ -14,13 +14,14 @@ import plotly.express as px
 # ------------------------
 
 from modules.data import load_and_preprocess_data
-from modules.visualizations import create_wealth_chart, create_world_map, create_treemap
+#from modules.visualizations import create_wealth_chart, create_world_map
 from modules.callbacks import (
     register_wealth_chart_callbacks,
     register_world_map_callbacks,
-    register_treemap_callbacks
+    register_treemap_callbacks,
 )
 from modules.layouts import create_layout
+from modules.callbacks import click_data as cd
 
 # Load data
 df, bill_df, scatter_data = load_and_preprocess_data()
@@ -49,6 +50,7 @@ app.layout = create_layout(df)
 register_wealth_chart_callbacks(app, df)
 register_world_map_callbacks(app, bill_df, scatter_data)
 register_treemap_callbacks(app, df)
+cd.register_click_data_callbacks(app)
 
 # ------------------------
 # Main

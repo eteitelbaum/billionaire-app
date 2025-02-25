@@ -2,12 +2,18 @@
 Industry treemap visualization for the Billionaires Dashboard.
 """
 import plotly.express as px
+from modules.visualizations import click_data as cd
 
-def create_treemap(year_df):
-    """Create the industry treemap visualization."""
+ 
+def create_treemap(year_df,selected_country):
+    
+    #"Create the industry treemap visualization."
     # Filter out rows with missing industry
-    filtered_df = year_df.dropna(subset=['industry'])
-
+    if selected_country is not None:
+        filtered_df = year_df[(year_df['country_of_citizenship'] == selected_country) & (year_df['industry'].notna())]
+    else:
+        filtered_df = year_df.dropna(subset=['industry'])
+    
     # Create treemap
     fig = px.treemap(
         filtered_df,
