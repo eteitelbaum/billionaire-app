@@ -32,7 +32,7 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
             text=(
                 choropleth_data["country_of_citizenship"]
                 + f"<br>{tab}: "
-                + choropleth_data[view_type].astype(str)
+                + choropleth_data[view_type].map(lambda x: f"{x:.2f}".rstrip("0").rstrip("."))
             ),
             colorscale="agsunset_r",
             zmin=min_val,
@@ -101,6 +101,7 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
         uirevision="true",
         clickmode="event"
     )
+    
     
     return fig
 

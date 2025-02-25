@@ -40,7 +40,7 @@ def create_wealth_chart(year_df,selected_country):
             title="Net Worth (Billions USD)",
             tickprefix="$",
             ticksuffix="B",
-            tickformat=".1f"
+            #tickformat=".1f"
         ),
         yaxis_title=None,
         showlegend=False,
