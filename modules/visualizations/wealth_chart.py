@@ -44,7 +44,7 @@ def create_wealth_chart(year_df,selected_country):
         ),
         yaxis_title=None,
         showlegend=False,
-        height=400,
+        height=370,
         margin=dict(l=0, r=0, t=0, b=0),
         yaxis={'categoryorder': 'total ascending'},
         paper_bgcolor=PAPER_BGCOLOR,

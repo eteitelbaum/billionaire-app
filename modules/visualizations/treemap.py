@@ -30,15 +30,11 @@ def create_treemap(year_df,selected_country):
     )
 
     fig.update_layout(
-        height=400,
-        margin=dict(l=0, r=0, t=0, b=30),  # Minimal margins
+        height=370,
+        margin=dict(l=0, r=0, t=0, b=0),  # Minimal margins
     )
 
     return fig
-
-if __name__ == "__main__":
-    print("This module is not meant to be run directly")
-
 
 if __name__ == "__main__":
     print("This module is not meant to be run directly")
