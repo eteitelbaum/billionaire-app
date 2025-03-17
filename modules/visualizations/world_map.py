@@ -20,6 +20,10 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
     # Filter data for selected year
     choropleth_data = bill_df[bill_df["year"] == selected_year]
     scatter_data_filtered = scatter_data[scatter_data["year"] == selected_year]
+
+    # Filter data for only countries with data
+    scatter_data_filtered = scatter_data_filtered.dropna(subset=[view_type])
+  
     
     # Create figure with both choropleth and scatter traces
     fig = go.Figure()
@@ -50,33 +54,34 @@ def create_world_map(selected_year, view_type, bill_df, scatter_data):
             hoverinfo="text"
         )
     )
-    
-    # Add scatter trace
-    fig.add_trace(
-        go.Scattergeo(
-            lat=scatter_data_filtered["lattitude"],
-            lon=scatter_data_filtered["longitude"],
-            text=(
-                scatter_data_filtered["country_of_citizenship"]
-                + f"<br>{tab}: "
-                + scatter_data_filtered[view_type].map(lambda x: f"{x:.2f}".rstrip("0").rstrip("."))
-            ),
-            mode="markers",
-            marker=dict(
-                size=10,
-                color=scatter_data_filtered[view_type],
-                cmin=min_val,
-                cmax=max_val,
-                colorscale="agsunset_r",
-                colorbar=None,
-                line=dict(
-                    color="black",
-                    width=2
-                )
-            ),
-            hovertemplate="Country: %{text}<extra></extra>"
+
+    # Scatter points only show up if there is billionaire data for that country, otherwise they are not there
+    if not scatter_data_filtered.empty:
+        fig.add_trace(
+            go.Scattergeo(
+                lat=scatter_data_filtered["lattitude"],
+                lon=scatter_data_filtered["longitude"],
+                text=(
+                    scatter_data_filtered["country_of_citizenship"]
+                    + f"<br>{tab}: "
+                    + scatter_data_filtered[view_type].map(lambda x: f"{x:.2f}".rstrip("0").rstrip("."))
+                ),
+                mode="markers",
+                marker=dict(
+                    size=10,
+                    color=scatter_data_filtered[view_type],
+                    cmin=min_val,
+                    cmax=max_val,
+                    colorscale="agsunset_r",
+                    colorbar=None,
+                    line=dict(
+                        color="black",
+                        width=2
+                    )
+                ),
+                hovertemplate="Country: %{text}<extra></extra>"
+            )
         )
-    )
     
     # Update map projection and appearance
     fig.update_geos(
